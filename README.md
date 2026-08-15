@@ -5,18 +5,67 @@
 
 本次实验旨在把握大致趋势，而非进行严格的学术论证。
 
+## prompt工程解释
+
+ prompt工程目标：是通过精心设计的输入文本，引导模型输出符合预期的高质量结果。
+
+ 一个高质量的 Prompt 通常包含五个核心要素：角色（Role）、任务（Task）、上下文（Context）、约束（Constraints）和格式（Format）。这五个要素共同构成了 Prompt 的"黄金结构"。
+
+ Few-Shot Learning 是 Prompt Engineering 中最强大的技术之一。通过在 Prompt 中提供少量输入-输出示例，你可以让模型快速理解任务模式，而无需重新训练模型参数。的核心原理是 In-Context Learning（上下文学习）。
+
+ Chain of Thought（CoT）Prompting 的核心思想是：引导模型将复杂问题拆解为多个中间推理步骤，而不直接跳到答案。两种实现方式：Zero-Shot CoT（只需在 Prompt 末尾加上"请逐步思考"）和 Few-Shot CoT（在示例中展示完整的推理过程）
+
+ ReAct（Reasoning + Acting）是一种将推理和行动交替进行的 Prompt 设计模式。与纯 CoT 不同，ReAct 让模型在推理过程中可以调用外部工具（如搜索引擎、API、数据库），然后根据工具返回的结果继续推理。
+
+ System Prompt是对话开始前注入模型的"系统级指令"，它定义了模型的行为边界、角色定位和输出风格。
+
+ 自洽性的工作流程是：对同一个问题，使用思维链提示生成 N 条（通常 5-40 条）不同的推理链，然后从这些推理链的最终答案中通过投票选出出现频率最高的那个。
+
+ 结构化输出：直接输出JSON 对象、XML 文档、CSV 表格等，以便后续程序可以直接解析和处理。
+
+ Tree of Thoughts（思维树）：核心思想：不是只沿着一条推理路径走到底，而是生成多个可能的推理步骤，评估每个步骤的质量，选择最有希望的路径继续深入。
+
+  本实验是对其中Few-Shot Learning，Zero-Shot CoT，Few-Shot CoT，Zero-Shot CoT + 自洽性，Few-Shot CoT + 自洽性进行可以量化的验证。
+
+ ### 2026年业界总结prompt的最佳实践
+
+推理任务必用 CoT
+任何涉及数学、逻辑、推理的问题，都应该使用 Chain-of-Thought。Zero-Shot CoT（加一句"让我们一步步思考"）是最低成本高回报的优化。
+
+高准确度需求用 Self-Consistency
+当需要 90%+ 的准确率时，Self-Consistency（k=5）是性价比最高的选择。
+
+需要外部能力用 ReAct
+搜索、计算、API 调用等场景，ReAct 框架是标准模式。
+
+复杂规划用 Tree of Thoughts
+创意写作、多步规划、策略制定等需要多路径探索的场景。
+
+结构化输出用 JSON Schema
+数据提取、API 响应、格式转换等场景，强制 JSON Schema 约束。
+
+Prompt 需要版本管理和 A/B 测试
+把 Prompt 当代码管理：版本控制、测试用例、性能监控。
+
+持续评估和优化
+建立评估集（Evaluation Suite），每次 Prompt 变更后自动回归测试。
+
+
+
 ## 实验方法
 策略:
-  E1 Zero-shot 基线          (temp=0.0, 1次)
-  E2 Zero-shot CoT           (temp=0.0, 1次)
-  E3 Few-shot CoT            (temp=0.0, 1次)
-  E4 Zero-shot CoT + 自洽性  (temp=0.7, 5次投票)
-  E5 Few-shot CoT + 自洽性   (temp=0.7, 5次投票)
+E1 Zero-shot 基线          (temp=0.0, 1次)
+E2 Zero-shot CoT           (temp=0.0, 1次)
+E3 Few-shot CoT            (temp=0.0, 1次)
+E4 Zero-shot CoT + 自洽性  (temp=0.7, 5次投票)
+E5 Few-shot CoT + 自洽性   (temp=0.7, 5次投票)
+
 数据集：
-  GSM8K 测试集前30道
+GSM8K 测试集前30道
+
 模型：
-  qwen2.5-3b（本地部署）
-  deepseek-v4-flash
+qwen2.5-3b（本地部署）
+deepseek-v4-flash
 
 
 ## 环境准备
@@ -68,6 +117,8 @@ python 3.8+，安装依赖：
    - **错误共识**（q3、q15）：Few-shot 例题把 5 次采样中的多数收敛到同一条错误路径，投票"自信地错"；**（在此之前，从没有想过Few-shot的机制会使错误答案也收敛）**
    - **平局翻车**（q2、q26）：正确/错误各 2 票打平，按出现顺序取先出现的错误答案（q20 反超也是同一机制碰巧取对）。
    - 这些题在 E4 中胜者票数也只有 2–4/5，属于模型本就不确定的题目。
+5. **不要忽略评估和忽视 Token 成本**：没有测试的 Prompt 优化是盲目的。Self-Consistency 和 ToT 的成本可能很高，需要权衡。
+6. **不要过度追求复杂技术**：比如在DeepSeek-V4-Flash上，简单的 Zero-Shot CoT 往往就能解决 90% 的问题
 
 ### 局限与注意事项
 
