@@ -1,0 +1,31 @@
+# Python 虚拟环境（重点！）
+.venv/
+venv/
+env/
+
+# Python 缓存与构建产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# 密钥与本地配置（永远不要提交）
+.env
+.env.*
+*.local
+
+# IDE 个人配置（保留 .vscode 里的共享配置，可自行决定）
+.idea/
+.vscode/*.code-workspace
+
+# 操作系统垃圾文件
+.DS_Store
+Thumbs.db
+
+# 大文件/模型权重（如果本地缓存的模型很大）
+*.bin
+*.pt
+*.pth
+*.safetensors
+.vscode/settings.json
